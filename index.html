@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family, Forever - Rehearsal Assistant</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0fdf4; }
+    .stage-direction { font-style: italic; color: #6b7280; }
+    .song-lyric { font-style: italic; color: #4338ca; }
+    .my-line { background-color: #dcfce7; border-left: 4px solid #22c55e; }
+    .active-line { background-color: #fef08a; border-left: 4px solid #eab308; transition: background-color 0.3s ease; }
+    /* Hide scrollbar for clean look but allow scrolling */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- SCRIPT DATA ---
+    const CHARACTERS = [
+      "Maya", "Chloe", "Ivy", "Brooklyn", "Luna", "Faith", 
+      "Max", "Alex", "Ben", "Ethan", "Caleb", "Ryan", "Jace", 
+      "Narrator 1", "Narrator 2", "Narrator 3", 
+      "Student 1", "Student 2", "Student 3", "Student 4", "Student 5", "Student 6", 
+      "Ms. Thompson", "The Mayor", "Grandma"
+    ];
+
+    const SCRIPT = [
+      {
+        id: 1,
+        title: "Scene 1 – The Perfect Week",
+        setting: "Classroom. Desks or chairs in clusters. A poster on the wall: “SPRING FESTIVAL – 1 WEEK!” Kids are buzzing. Ms. Thompson at the front.",
+        songName: "Perfect Week",
+        audioFile: "Song 1. Perfect Week.mp3",
+        lines: [
+          { speaker: "Narrator 1", text: "In a small town, in a bright little school, there was one week every year that everyone loved." },
+          { speaker: "Narrator 2", text: "Games. Food. Music. Prizes. Friends." },
+          { speaker: "Narrator 3", text: "The Spring Festival. And this year, the kids were more excited than ever." },
+          { type: "stage", text: "(Ms. Thompson claps hands)" },
+          { speaker: "Ms. Thompson", text: "Okay, class! Settle down. I know festival week is coming…" },
+          { speaker: "Brooklyn", text: "Coming? It’s practically screaming our names, Ms. T!" },
+          { type: "stage", text: "(Kids laugh.)" },
+          { speaker: "Ms. Thompson", text: "Yes, Brooklyn. But we still have to do our work and get ready. Good thing we have a whole week." },
+          { type: "stage", text: "(Chloe stands, dramatic)" },
+          { speaker: "Chloe", text: "This is going to be the BEST festival ever. I already made a schedule on my phone. Games. Talent show. Cotton candy. Cute outfits. I’m so ready." },
+          { speaker: "Luna", text: "We should have a photo booth again!" },
+          { speaker: "Faith", text: "And maybe a friendship bracelet table!" },
+          { speaker: "Ethan", text: "I’m just here for the snacks." },
+          { speaker: "Ben", text: "And the games!" },
+          { speaker: "Alex", text: "And the dunk tank!" },
+          { speaker: "Jace", text: "And skipping homework. (winks)" },
+          { speaker: "Ms. Thompson", text: "Nice try, Jace. The festival is Saturday, not a “no-homework zone.” But yes, it’s going to be great. And this year, the school asked YOU to help organize." },
+          { type: "stage", text: "(Chloe preens)" },
+          { speaker: "Chloe", text: "Obviously. We’re amazing." },
+          { speaker: "Ms. Thompson", text: "We also have some new faces this year. Class, this is Maya. She just moved here. And that’s her little brother, Max, in 3rd grade." },
+          { speaker: "Maya", text: "Hi." },
+          { type: "stage", text: "(Max waves too hard, almost hits someone)" },
+          { speaker: "Max", text: "Hi! Sorry!" },
+          { speaker: "Student 1", text: "Hey, Maya!" },
+          { speaker: "Student 2", text: "Welcome!" },
+          { type: "stage", text: "(Chloe steps over, friendly but queen-bee-ish)" },
+          { speaker: "Chloe", text: "I’m Chloe. I kind of… organize everything. Stick with us, we’ll show you how Festival Week works." },
+          { speaker: "Maya", text: "That would be awesome." },
+          { speaker: "Max", text: "Can I help too?" },
+          { speaker: "Chloe", text: "Uh, sure, Max. Just… try not to break anything?" },
+          { type: "stage", text: "(Kids chuckle.)" },
+          { speaker: "Maya", text: "We’ll both help. Right, Max?" },
+          { speaker: "Max", text: "Yes, ma’am!" },
+          { speaker: "Narrator 1", text: "Maya wanted this week to be perfect." },
+          { speaker: "Narrator 2", text: "New school. New friends. New chance." },
+          { speaker: "Narrator 3", text: "What could possibly go wrong?" },
+          { speaker: "Ms. Thompson", text: "Alright, Carnival Committee! Before we start, I think we need a little music to kick off Festival Week." },
+          { type: "stage", text: "(Kids cheer)" },
+          { speaker: "Ms. Thompson", text: "Everyone up! Let’s sing it out." },
+          { type: "song", text: "SONG 1 – “Perfect Week”" },
+          { speaker: "Maya", text: "New school, new hallways, new names I don’t know, \nOne week to show them that I can glow. \nPosters and tickets, decorations to tweak, \nThis is gonna be the perfect week.", type: "song" },
+          { speaker: "Chloe", text: "I’ve got a planner and ten colored pens, \nI run the carnival with all my friends. \nGames, snacks, outfits, the festival chic, \nThis is gonna be the perfect week.", type: "song" },
+          { speaker: "All Kids", text: "Perfect week, here we go, \nCounting down the days so the fun can blow! \nWe’ve got plans and we’ve got cheer, \nBest time of the whole school year! \nPerfect week, can’t you see? \nFriends and fun and family. \nHold on tight, don’t even speak, \nThis is gonna be the perfect week!", type: "song" },
+          { speaker: "Brooklyn", text: "We’ll have ring toss, face paint too,", type: "song" },
+          { speaker: "Ethan", text: "Popcorn, nachos, maybe stew?", type: "song" },
+          { speaker: "Luna", text: "Colorful banners flying high,", type: "song" },
+          { speaker: "Ben", text: "We’ll toss water balloons in the sky!", type: "song" },
+          { speaker: "Ivy", text: "I just hope we stay kind and true, \nRemember what this means to you.", type: "song" },
+          { speaker: "All Kids", text: "Perfect week, here we go, \nCounting down the days so the fun can blow! \nWe’ve got plans and we’ve got cheer, \nBest time of the whole school year! \nPerfect week, side by side, \nHearts wide open, full of pride. \nWe’re the ones who make it peak, \nThis is gonna be the perfect week!", type: "song" },
+          { speaker: "Ms. Thompson", text: "Alright, Festival Crew – let’s get to work!" },
+        ]
+      },
+      {
+        id: 2,
+        title: "Scene 2 – Everything Breaks",
+        setting: "The gym or stage area, later that week. Banners half-hung, props around, boxes, paint, etc. The big banner says: “WELCOME TO THE SPRING FESTIVAL!”",
+        songName: "Everything Breaks",
+        audioFile: "Song 2. Everything Breaks.mp3",
+        lines: [
+          { speaker: "Alex", text: "Someone hand me the tape!" },
+          { speaker: "Luna", text: "These go on the table edges, right?" },
+          { speaker: "Ethan", text: "Careful, this box has chips… and more chips." },
+          { speaker: "Ben", text: "Dibs on quality control." },
+          { speaker: "Brooklyn", text: "“Quality control” meaning you eat half the chips?" },
+          { speaker: "Ben", text: "It’s a sacrifice I’m willing to make." },
+          { speaker: "Chloe", text: "Okay, people! Focus. We only have a couple of days left. The mayor is coming. This banner has to look amazing." },
+          { speaker: "Maya", text: "Almost done… “Welcome to the Spring Festival”… done!" },
+          { speaker: "Max", text: "Maya! Look! Ms. Thompson let me bring the safety scissors. I’m a real helper now!" },
+          { speaker: "Maya", text: "Nice, Max." },
+          { speaker: "Chloe", text: "Okay, team, positions. Alex and Ryan, up on that side. Maya and Caleb, other side. We lift on three and hang the banner." },
+          { speaker: "Max", text: "Can I help too?" },
+          { speaker: "Chloe", text: "Uh… just hold this box, okay? Don’t move it." },
+          { speaker: "Max", text: "Box guard duty. Got it." },
+          { type: "stage", text: "(They raise and hang the banner.)" },
+          { speaker: "Luna", text: "It looks so good!" },
+          { speaker: "Faith", text: "This is gonna be awesome." },
+          { speaker: "Narrator 1", text: "Everything was going just how Maya hoped." },
+          { speaker: "Narrator 2", text: "Friends. Laughter. Progress." },
+          { speaker: "Narrator 3", text: "And then… it happened." },
+          { type: "stage", text: "(Max bumps a prop, causing a chain reaction. The banner rips and he lands on it.)" },
+          { speaker: "All Kids", text: "MAX!!!" },
+          { speaker: "Max", text: "…Ow. …Did I… did I do it wrong?" },
+          { speaker: "Chloe", text: "No. No. NO! Max, you destroyed it!" },
+          { speaker: "Ben", text: "Dude. The whole banner!" },
+          { speaker: "Ethan", text: "And the chips!!!" },
+          { speaker: "Caleb", text: "The chair almost hit me!" },
+          { speaker: "Ryan", text: "You always mess stuff up!" },
+          { speaker: "Student 3", text: "What is wrong with you?" },
+          { speaker: "Max", text: "I… I was just holding the box like you said… I didn’t see the… I’m sorry… I’m really sorry…" },
+          { speaker: "Maya", text: "Hey! Stop it. It was an accident." },
+          { speaker: "Chloe", text: "An accident that ruined EVERYTHING! Do you see this? Do you see what he did?" },
+          { speaker: "Luna", text: "The banner is ripped right down the middle…" },
+          { speaker: "Faith", text: "We spent hours on that…" },
+          { speaker: "Ben", text: "Now we have nothing to hang. The mayor’s going to think we’re babies or something." },
+          { speaker: "Caleb", text: "Yeah, thanks, Max." },
+          { speaker: "Ryan", text: "Why is he even here? This is for big kids." },
+          { speaker: "Student 4", text: "He’s like a walking disaster." },
+          { speaker: "Max", text: "I said I’m sorry…" },
+          { speaker: "Maya", text: "Stop it! He’s my brother. You can’t just—" },
+          { speaker: "Chloe", text: "We TRUSTED you. This was supposed to be the best festival ever. And now look. Props everywhere, banner destroyed… We’re out of time!" },
+          { speaker: "Maya", text: "It was an accident. He didn’t mean to—" },
+          { speaker: "Chloe", text: "You always say that. “He didn’t mean to.” Does that fix anything? No!" },
+          { speaker: "Ben", text: "Maybe if he wasn’t always underfoot…" },
+          { speaker: "Caleb", text: "We work hard and he just ruins stuff." },
+          { type: "stage", text: "(All kids murmur agreement. Max starts to cry.)" },
+          { speaker: "Max", text: "I… I’ll go. I’m sorry, Maya…" },
+          { type: "stage", text: "(He moves to get up. Maya hesitates.)" },
+          { speaker: "Maya", text: "Wait—" },
+          { speaker: "Chloe", text: "Are you seriously taking his side right now?" },
+          { speaker: "Maya", text: "He’s my brother. Of course I—" },
+          { speaker: "Caleb", text: "So you’re okay with all of this being ruined?" },
+          { speaker: "Ryan", text: "With everyone laughing at us?" },
+          { speaker: "Student 5", text: "We were finally making something cool, and now it’s trash." },
+          { speaker: "Narrator 1", text: "Maya felt the whole room staring at her." },
+          { speaker: "Narrator 2", text: "Her new friends on one side…" },
+          { speaker: "Narrator 3", text: "And her little brother, shaking, on the other." },
+          { speaker: "Chloe", text: "Well?" },
+          { type: "stage", text: "(Maya looks at Max, then at Chloe and the others.)" },
+          { speaker: "Maya", text: "Max… why can’t you just stop messing everything up?!" },
+          { type: "stage", text: "(Gasps.)" },
+          { speaker: "Max", text: "Maya…?" },
+          { speaker: "Maya", text: "You always break things. You always trip. You always make me look like… like a baby. Maybe you just shouldn’t be here." },
+          { type: "stage", text: "(Silence.)" },
+          { speaker: "Max", text: "…Okay." },
+          { type: "stage", text: "(He gets up slowly and exits.)" },
+          { speaker: "Ben", text: "Harsh." },
+          { speaker: "Chloe", text: "Well. At least she finally said what we were all thinking." },
+          { speaker: "Maya", text: "We don’t… have time for mistakes." },
+          { speaker: "Chloe", text: "Exactly. We can’t have people like that ruining everything. (Looks at banner) You know what? This is a sign. We’re done." },
+          { speaker: "Alex", text: "Done… what do you mean, done?" },
+          { speaker: "Chloe", text: "I mean the festival. My mom and I are in charge of the sign-ups and the budget. I’m telling her we’re canceling. We can’t pull this off now. Not with this mess, and not with everyone acting crazy." },
+          { speaker: "Luna", text: "Cancel it?" },
+          { speaker: "Faith", text: "But Chloe—" },
+          { speaker: "Chloe", text: "It’s over. I’m not going to be embarrassed in front of the whole town. I quit." },
+          { type: "stage", text: "(She storms off. A few kids follow her.)" },
+          { speaker: "Caleb", text: "If Chloe’s out, I’m out." },
+          { speaker: "Ben", text: "Yeah. Whatever." },
+          { type: "stage", text: "(They exit, leaving Maya and a few others.)" },
+          { speaker: "Ivy", text: "Are you okay?" },
+          { speaker: "Maya", text: "I… don’t know." },
+          { type: "song", text: "SONG 2 – “Everything Breaks”" },
+          { speaker: "All Kids", text: "Crash… rip… fall… break…", type: "song" },
+          { speaker: "Chloe", text: "He trips, he spills, he never sees, \nA mess of props and banners and knees. \nWe worked so hard, we raised the stakes, \nNow look around… everything breaks.", type: "song" },
+          { speaker: "All Kids", text: "Everything breaks, everything breaks, \nWhen one wrong move is all it takes.", type: "song" },
+          { speaker: "Maya", text: "(Spoken) I didn’t mean it… Why did I say that? Everyone was watching… What was I supposed to do?", type: "song" },
+          { speaker: "Alex", text: "Was it worth the words you said? \nSee his eyes and hanging head…", type: "song" },
+          { speaker: "Max", text: "I just wanted to help…", type: "song" },
+          { speaker: "All Kids", text: "Crash… rip… fall… break… \nSometimes it’s not things… it’s hearts that break.", type: "song" }
+        ]
+      },
+      {
+        id: 3,
+        title: "Scene 3 – The Aftermath / Invisible Brother",
+        setting: "Next day. School hallway. A printed sign says: “SPRING FESTIVAL – CANCELED.”",
+        songName: "Invisible Brother",
+        audioFile: "Song 3. Invisible Brother.mp3",
+        lines: [
+          { speaker: "Narrator 1", text: "The next day, the festival was gone." },
+          { speaker: "Narrator 2", text: "No balloons. No banner. No games." },
+          { speaker: "Narrator 3", text: "Just a sign on the wall… and a lot of feelings." },
+          { speaker: "Ethan", text: "“Due to planning issues, the Spring Festival has been canceled.” Planning issues? More like drama issues." },
+          { speaker: "Brooklyn", text: "This is so sad. The only thing I liked more than math was this week. Okay, that’s a lie, I don’t like math at all. But still." },
+          { speaker: "Ryan", text: "Chloe said it was pointless now." },
+          { speaker: "Caleb", text: "Her mom agreed. They already told the mayor." },
+          { speaker: "Student 6", text: "My little sister cried when she heard." },
+          { speaker: "Alex", text: "Where’s Maya?" },
+          { speaker: "Ivy", text: "She’s been quiet all morning." },
+          { type: "stage", text: "(Maya enters, sees the sign.)" },
+          { speaker: "Maya", text: "They actually did it…" },
+          { speaker: "Luna", text: "Maya, hey." },
+          { speaker: "Faith", text: "We’re really sorry." },
+          { speaker: "Ben", text: "Yeah… we kind of… lost it yesterday." },
+          { speaker: "Brooklyn", text: "It was like a disaster movie, but without the cool special effects." },
+          { speaker: "Alex", text: "You okay?" },
+          { speaker: "Maya", text: "I’m fine." },
+          { speaker: "Ivy", text: "Are you?" },
+          { speaker: "Maya", text: "No. I yelled at Max. He hasn’t talked to me since. He went straight to his room last night. Grandma said he cried himself to sleep." },
+          { type: "stage", text: "(Kids soft aww)" },
+          { speaker: "Brooklyn", text: "That’s rough." },
+          { speaker: "Alex", text: "Did you talk to him this morning?" },
+          { speaker: "Maya", text: "He… wouldn’t look at me. He just grabbed his backpack and left. He didn’t even want me to walk with him." },
+          { speaker: "Ivy", text: "Maya, you know why." },
+          { speaker: "Maya", text: "I know. I called him “the problem.” In front of everyone. Like he was something to be ashamed of." },
+          { speaker: "Ben", text: "We all kinda… piled on." },
+          { speaker: "Caleb", text: "Yeah." },
+          { speaker: "Ryan", text: "We made him feel like he didn’t belong." },
+          { speaker: "Maya", text: "And for what? So… so I could look cool? So Chloe would still like me? New school, new Maya, let’s throw away the old one." },
+          { type: "stage", text: "(She sinks onto a bench. Ivy sits beside her.)" },
+          { speaker: "Ivy", text: "You’re not a bad person. You just made a bad choice." },
+          { speaker: "Maya", text: "Doesn’t feel like that. Feels like… I broke something I can’t fix." },
+          { speaker: "Narrator 1", text: "While the older kids talked…" },
+          { speaker: "Narrator 2", text: "Someone else sat alone." },
+          { speaker: "Narrator 3", text: "Feeling very, very small." },
+          { type: "stage", text: "(Lights shift to Max alone.)" },
+          { type: "song", text: "SONG 3 – “Invisible Brother”" },
+          { speaker: "Max", text: "I was just trying to carry a box, \nHold it real still, stay off the rocks. \nI didn’t mean to make things fall, \nDidn’t mean to ruin it all.", type: "song" },
+          { speaker: "Max", text: "I heard the shouting, heard my name, \nFelt my face go hot with shame. \nEveryone staring, eyes like burns, \nI wanted to run but my stomach turned.", type: "song" },
+          { speaker: "Max", text: "Sometimes I feel like I’m not really here, \nLike I’m just trouble that appears. \nToo loud, too clumsy, too much noise, \nToo small to be one of the “big kids’” joys.", type: "song" },
+          { speaker: "Max", text: "Invisible brother, \nThat’s what I’ll be. \nIf they can’t see my heart, then they won’t see me. \nI’ll be quiet, I’ll be still, I won’t get in the way. \nMaybe then they’ll have a perfect day.", type: "song" },
+          { speaker: "Max", text: "I thought my sister was on my side, \nThe one who’d always be my guide. \nBut yesterday, her words cut deep, \nThose are the ones that make you weep.", type: "song" },
+          { speaker: "Max", text: "Invisible brother, \nJust fade from sight. \nHide your colors, turn off your light. \nIf I disappear, then no one will say, \n“You ruined our fun. You ruined our day.”", type: "song" },
+          { speaker: "Max", text: "I wish someone would see me, \nNot just the fall or the spill. \nSee that I’m trying so hard, \nAnd I always will.", type: "song" },
+          { speaker: "Max", text: "Invisible brother, \nI don’t want to be. \nI just want someone to stand with me. \nMaybe one day, they’ll understand, \nI was never trying to wreck their plans.", type: "song" }
+        ]
+      },
+      {
+        id: 4,
+        title: "Scene 4 – Cool Isn’t Kind",
+        setting: "Back to playground/hallway with the kids.",
+        songName: "Cool Isn't Kind",
+        audioFile: "Song 4. Cool Isn't Kind.mp3",
+        lines: [
+          { speaker: "Student 2", text: "I saw Max by the swings. He just stared at the ground." },
+          { speaker: "Maya", text: "Yeah. I know why." },
+          { speaker: "Alex", text: "You can still talk to him." },
+          { speaker: "Maya", text: "What if he doesn’t want to talk to me?" },
+          { speaker: "Ivy", text: "Then you listen. But first, you have to decide who you want to be." },
+          { speaker: "Maya", text: "What do you mean?" },
+          { speaker: "Ivy", text: "Look, Maya… At the beginning of the week, you were just you. Kind. Brave. Loyal to Max. Then things got… twisty." },
+          { speaker: "Ivy", text: "You wanted to fit in so badly that you turned on him. You have to decide: Do you want to be “the cool one”… or the real one?" },
+          { speaker: "Alex", text: "Being right, being popular, looking perfect – it all goes away. Family doesn’t." },
+          { speaker: "Maya", text: "Cool isn’t kind." },
+          { speaker: "Ivy", text: "No. It isn’t." },
+          { speaker: "Maya", text: "Then I think… I need to change." },
+          { type: "song", text: "SONG 4 – “Cool Isn’t Kind”" },
+          { speaker: "Maya", text: "I traded my heart for a laugh in the crowd, \nTurned up my voice just to feel proud. \nPushed down the part that knew it was wrong, \nJust to feel like I belonged.", type: "song" },
+          { speaker: "Maya", text: "I saw his face when I said those words, \nThey echoed louder than all the others heard. \n“Maybe you shouldn’t be here”… \nNow that’s the only thing I hear.", type: "song" },
+          { speaker: "Ivy", text: "Cool isn’t kind, Cool isn’t true, \nIf it means losing the real you.", type: "song" },
+          { speaker: "Maya", text: "Cool isn’t kind, when it leaves someone behind, \nWhen you crush a heart just to ease your mind. \nI thought I’d feel strong, but I just feel small, \nIf that’s being “cool,” then I don’t want it at all.", type: "song" },
+          { speaker: "Maya", text: "I see my brother, sitting all alone, \nBlaming himself in a world of stone. \nI put the weight on his little back, \nAll to stay in the popular pack.", type: "song" },
+          { speaker: "Maya", text: "I thought applause would feel like gold, \nBut this heavy shame is all I hold. \nI’d give it back, every “You were right,” \nTo tell him I’m sorry and make this right.", type: "song" },
+          { speaker: "Alex", text: "Cool isn’t kind, Cool isn’t fair, \nNot if someone’s left in despair.", type: "song" },
+          { speaker: "Maya", text: "Cool isn’t kind, if the price is love, \nIf you push away the ones who lift you up. \nI’d rather stand out, I’d rather stand alone, \nThan stand with a crowd and turn my heart to stone.", type: "song" },
+          { speaker: "Maya", text: "I want to be brave enough to say, \nI was wrong, can we find a better way?", type: "song" },
+          { speaker: "Ivy", text: "You can say it, you can choose a new start,", type: "song" },
+          { speaker: "Alex", text: "Go find your brother, speak from your heart.", type: "song" },
+          { speaker: "All Kids", text: "Cool isn’t kind… but love can be.", type: "song" },
+          { speaker: "Maya", text: "I have to talk to Max. And… I have to fix the festival." },
+          { speaker: "Brooklyn", text: "Both? Big goals. I like it." },
+          { speaker: "Luna", text: "We’ll help." },
+          { speaker: "Faith", text: "Yeah. You don’t have to do it alone." },
+          { speaker: "Alex", text: "First stop: Max. Second: Chloe." },
+          { speaker: "Ivy", text: "That’ll be the hard one." },
+          { speaker: "Maya", text: "I know. But I can’t run anymore." }
+        ]
+      },
+      {
+        id: 5,
+        title: "Scene 5 – Making It Right",
+        setting: "Maya’s living room/yard. Evening. Then later at School.",
+        songName: "Try Again",
+        audioFile: "Song 5. Try Again.mp3",
+        lines: [
+          { speaker: "Grandma", text: "There you are, Maya. Max has been quiet all day. That’s not like him." },
+          { speaker: "Maya", text: "Can I talk to him?" },
+          { speaker: "Grandma", text: "You can always try. I’ll be in the kitchen." },
+          { type: "stage", text: "(Grandma exits. Maya sits near Max.)" },
+          { speaker: "Maya", text: "Hey." },
+          { speaker: "Max", text: "Hi." },
+          { speaker: "Maya", text: "What are you drawing?" },
+          { speaker: "Max", text: "Nothing." },
+          { speaker: "Maya", text: "Looks like something." },
+          { speaker: "Max", text: "Just… a banner." },
+          { speaker: "Maya", text: "Oh. Max… I need to say something. Yesterday… I hurt you. Not because you deserved it. Because I was scared." },
+          { speaker: "Maya", text: "And I wanted Chloe and everyone to like me. And instead of protecting you, I threw you under the bus." },
+          { speaker: "Max", text: "You said maybe I shouldn’t be there." },
+          { speaker: "Maya", text: "I know. And I’m sorry. Like… really, really sorry. If I could take those words and stuff them back in my mouth, I would. You’re my brother. You’re not a problem. You’re not a disaster. You’re… Max." },
+          { speaker: "Max", text: "But I do mess things up a lot." },
+          { speaker: "Maya", text: "Everyone does. Chloe messes up. I mess up. But I made it look like only you were the problem. That was wrong." },
+          { speaker: "Max", text: "I just wanted to help." },
+          { speaker: "Maya", text: "I know. And you get excited. And sometimes your feet can’t keep up. But that excitement? That joy? That’s part of what makes you amazing. I forgot that for a minute." },
+          { speaker: "Maya", text: "Will you let me remember? Will you… let me try again?" },
+          { speaker: "Max", text: "Can I be mad at you a little bit longer?" },
+          { speaker: "Maya", text: "Yeah. You can. But can I… still sit next to you?" },
+          { speaker: "Max", text: "…Yeah." },
+          { type: "stage", text: "(She sits beside him.)" },
+          { speaker: "Maya", text: "Also, I need your help. I’m going to bring the festival back. Even if the mayor already thinks it’s canceled. But I need an expert." },
+          { speaker: "Max", text: "An expert… in what?" },
+          { speaker: "Maya", text: "Fun. I want to make you the Official Fun Analyzer. You test every game. You try every snack. You tell us what kids will actually enjoy. No one knows fun like you." },
+          { speaker: "Max", text: "Official… Fun Analyzer?" },
+          { speaker: "Maya", text: "Clipboard, badge, everything." },
+          { speaker: "Max", text: "Do I get to slide test the bouncy house?" },
+          { speaker: "Maya", text: "If we get a bouncy house. But yeah. Probably." },
+          { speaker: "Max", text: "I’ll have to think about it." },
+          { speaker: "Maya", text: "That’s fair." },
+          { type: "stage", text: "(Lights shift to school hallway/playground. Maya walks to Chloe.)" },
+          { speaker: "Chloe", text: "Oh look. The girl who helped get my festival canceled." },
+          { speaker: "Maya", text: "Your festival?" },
+          { speaker: "Chloe", text: "I started planning it in second grade. It’s been my thing forever. And then you show up and it all falls apart." },
+          { speaker: "Maya", text: "We all messed up. You, me, the others. But Chloe… canceling the whole thing? That’s not just about you. The whole town loses it. Your little cousins. My brother. Everyone." },
+          { speaker: "Ben", text: "There’s no time left." },
+          { speaker: "Maya", text: "There is, if we work together. We already did a ton of prep. We can salvage games, snacks, decorations. We can talk to the mayor again. We can ask teachers and parents." },
+          { speaker: "Caleb", text: "Why should we listen to you?" },
+          { speaker: "Maya", text: "Because… I was wrong. I hurt Max. I hurt myself. Trying to be whatever you all wanted me to be. And it felt awful." },
+          { speaker: "Maya", text: "If keeping your respect means I have to pretend my brother is trash, then I don’t want it." },
+          { speaker: "Chloe", text: "So now I’M the bad guy?" },
+          { speaker: "Maya", text: "No. You were scared too. Scared of looking silly. Scared of failure. So you canceled the whole thing and blamed “planning issues.”" },
+          { speaker: "Maya", text: "But I see how much you love this festival. You talk about it like it’s your birthday and the Super Bowl combined. You don’t really want it gone." },
+          { speaker: "Chloe", text: "It used to be the one day my mom and I didn’t fight. We would run booths, eat cotton candy until we felt sick. It was… ours. Now it’s ruined." },
+          { speaker: "Maya", text: "It’s not ruined. It’s… dented. We can fix it." },
+          { speaker: "Maya", text: "I can’t do it without you, though. You know the traditions. You know the schedules. You’re actually great at this. I’m just… brave enough to say I messed up and I want to try again. Will you try with me?" },
+          { type: "song", text: "SONG 5 – “Try Again”" },
+          { speaker: "Maya", text: "I don’t have all the answers, I got lost along the way. \nI hurt the ones that matter most, \nJust to hear the crowd say “yay.”", type: "song" },
+          { speaker: "Chloe", text: "I built my world on being strong, \nBeing right and in control. \nBut when it all came crashing down, \nI felt a crack inside my soul.", type: "song" },
+          { speaker: "Maya", text: "Maybe we can try again, \nRewrite the story from here to then.", type: "song" },
+          { speaker: "Chloe", text: "Not as rivals, not as foes, \nJust two girls who chose to grow.", type: "song" },
+          { speaker: "Maya", text: "I’ll say I’m sorry, I’ll make a start, \nPut my pride down, open my heart.", type: "song" },
+          { speaker: "Chloe", text: "I’ll say I’m sorry for walking away, \nFor canceling joy because I was afraid.", type: "song" },
+          { speaker: "All Kids", text: "Try again… try again… \nLet’s try again, not to be perfect, \nBut to be honest, kind, and true.", type: "song" },
+          { speaker: "Alex", text: "We can paint a new banner.", type: "song" },
+          { speaker: "Ivy", text: "We can fix what tore apart.", type: "song" },
+          { speaker: "Brooklyn", text: "We can laugh at our mistakes.", type: "song" },
+          { speaker: "Luna", text: "We can start with kinder hearts.", type: "song" },
+          { speaker: "Chloe", text: "I don’t want a “perfect” show, \nI just want us all to grow.", type: "song" },
+          { speaker: "All Kids", text: "So let’s try again, together this time, \nLet’s choose courage over “looking fine.” \nLet’s try again, with our hearts in view, \n’Cause you need me and I need you. \nWe’ll make space for every friend, \nWe’re not done – this isn’t the end. \nTake my hand and count to ten… \nOne, two, three… \nLet’s try again.", type: "song" },
+          { speaker: "Ben", text: "Okay, I got chills. I’m in." },
+          { speaker: "Caleb", text: "Yeah. Just… don’t make me sing a solo." },
+          { speaker: "Ryan", text: "I’ll help set up games." },
+          { speaker: "Alex", text: "Let’s go talk to Ms. Thompson and the mayor." },
+          { speaker: "Ivy", text: "And we need the Official Fun Analyzer." },
+          { speaker: "Maya", text: "He’s got the job." }
+        ]
+      },
+      {
+        id: 6,
+        title: "Scene 6 – Festival & Finale",
+        setting: "The festival area on the big day. Simpler decorations than before, but bright and cheerful. A new banner reads “SPRING FESTIVAL – FAMILY, FOREVER.”",
+        songName: "Family, Forever",
+        audioFile: "Song 6. Family Forever.mp3",
+        lines: [
+          { speaker: "Narrator 1", text: "They worked like crazy for a few more days." },
+          { speaker: "Narrator 2", text: "They called the mayor, talked to teachers, begged parents." },
+          { speaker: "Narrator 3", text: "And somehow… they did it." },
+          { type: "stage", text: "(Max with a “Fun Analyzer” badge and clipboard, testing games and snacks.)" },
+          { speaker: "Max", text: "Ring toss fun score: eight out of ten! Needs more prizes." },
+          { speaker: "Jace", text: "We ran out of candy." },
+          { speaker: "Max", text: "Okay, stickers it is. Fun Analyzer approves." },
+          { speaker: "Grandma", text: "Look at all this. You did it." },
+          { speaker: "Maya", text: "We did it. And Max made it fun." },
+          { speaker: "Grandma", text: "Official Fun Analyzer, huh?" },
+          { speaker: "Max", text: "It’s a very serious job." },
+          { speaker: "Chloe", text: "Lemonade, anyone? And before you say anything, yes, I spilled the first pitcher. No one yelled at me, though." },
+          { speaker: "Brooklyn", text: "Growth!" },
+          { type: "stage", text: "(The Mayor claps for attention. Kids gather.)" },
+          { speaker: "The Mayor", text: "I was told this festival was canceled. Then a group of kids marched into my office and said, “Nope. We’re bringing it back.”" },
+          { speaker: "The Mayor", text: "They worked hard, they owned their mistakes, and they remembered what this is really about. Not perfection. Not popularity. But community. Family. I am proud of every single one of you." },
+          { type: "stage", text: "(Applause.)" },
+          { speaker: "Ms. Thompson", text: "How about we end this with a song?" },
+          { speaker: "Maya", text: "A song about what we learned." },
+          { speaker: "Chloe", text: "And what we want to remember. Forever." },
+          { type: "song", text: "SONG 6 – “Family, Forever”" },
+          { speaker: "Maya", text: "I thought I had to be the best, \nTo prove that I was worth the rest. \nBut when I pushed my brother away, \nI lost myself along the way.", type: "song" },
+          { speaker: "Max", text: "I thought that I should disappear, \nIf I was only causing fear. \nBut now I know I still belong, \nEven when I don’t act strong.", type: "song" },
+          { speaker: "Chloe", text: "I thought I had to be in control, \nBe the leader, play the role. \nNow I see it’s so much better, \nWhen we carry joy together.", type: "song" },
+          { speaker: "All Kids", text: "Family, forever, \nNot just the ones at home. \nIt’s the hands that lift you up, \nWhen you feel alone. \nFriends and brothers, sisters too, \nPeople who stand by what is true. \nWe make mistakes, but we get better, \n’Cause we are family… forever.", type: "song" },
+          { speaker: "Ivy", text: "When the banner rips in two, \nWe’ll find tape and start anew.", type: "song" },
+          { speaker: "Brooklyn", text: "When the snacks fall on the floor, \nWe’ll laugh and then go buy some more.", type: "song" },
+          { speaker: "Luna", text: "When harsh words slip out in fear, \nWe’ll say “I’m sorry,” draw them near.", type: "song" },
+          { speaker: "Ben", text: "We’ll be brave enough to say, \n“Let’s try again another day.”", type: "song" },
+          { speaker: "All Kids", text: "Family, forever, \nNot just a last name. \nIt’s the ones who love you still, \nWhen you’ve lost the game. \nFriends and brothers, sisters too, \nPeople who see the heart in you. \nWe’re not perfect, but together, \nWe are family… forever.", type: "song" },
+          { speaker: "Maya", text: "(Spoken) I’m Maya. I’m not perfect. But I’m going to choose love next time.", type: "song" },
+          { speaker: "Max", text: "(Spoken) I’m Max. I’m clumsy. But I’m not invisible.", type: "song" },
+          { speaker: "Chloe", text: "(Spoken) I’m Chloe. I like being in charge. But I like being kind more.", type: "song" },
+          { speaker: "Ivy", text: "(Spoken) I’m Ivy. I’ll remind us who we are.", type: "song" },
+          { speaker: "Alex", text: "(Spoken) I’m Alex. I’ll stand in the middle and listen.", type: "song" },
+          { speaker: "All Kids", text: "(Spoken) We’re friends. We’re family. We’re growing. Together.", type: "song" },
+          { speaker: "All Kids", text: "Family, forever, \nHand in hand we stand. \nNot just when the days are easy, \nBut when things don’t go as planned. \nWe’ll fall down and we’ll get up, \nShare our tears and share our laughter. \nHold this truth in every weather: \nWe are family… forever.", type: "song" },
+          { speaker: "Narrator 1", text: "The festival ended." },
+          { speaker: "Narrator 2", text: "The games were packed away." },
+          { speaker: "Narrator 3", text: "But what they learned stayed with them." },
+          { speaker: "All Kids", text: "Because being “cool”… is never as important as being kind." },
+          { type: "stage", text: "(BOWS.)" },
+        ]
+      }
+    ];
+
+    function App() {
+      const [selectedChar, setSelectedChar] = useState("");
+      const [activeSceneIndex, setActiveSceneIndex] = useState(0);
+      const [activeLineIndex, setActiveLineIndex] = useState(-1);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [isWaitingForUser, setIsWaitingForUser] = useState(false);
+      
+      const scriptRefs = useRef([]);
+
+      const activeScene = SCRIPT[activeSceneIndex];
+
+      // Speech Synthesis logic
+      useEffect(() => {
+        if (!isPlaying) {
+          window.speechSynthesis.cancel();
+          return;
+        }
+
+        const line = activeScene.lines[activeLineIndex];
+        
+        // Reached end of scene
+        if (!line) {
+          setIsPlaying(false);
+          setActiveLineIndex(-1);
+          return;
+        }
+
+        // Auto-scroll to active line
+        if (scriptRefs.current[activeLineIndex]) {
+          scriptRefs.current[activeLineIndex].scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+        }
+
+        // Stage directions or song lyrics - skip AI reading, just show it briefly
+        if (line.type === 'stage' || line.type === 'song') {
+          const timer = setTimeout(() => {
+            setActiveLineIndex(prev => prev + 1);
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+
+        // Determine if it's the user's line
+        // If they chose "Maya", then "Maya" and "All Kids" will count as their line
+        const isMyLine = selectedChar && (
+            line.speaker === selectedChar || 
+            (line.speaker === "All Kids" && selectedChar !== "Ms. Thompson" && selectedChar !== "Grandma" && selectedChar !== "The Mayor") ||
+            line.speaker.includes(selectedChar)
+        );
+
+        if (isMyLine) {
+          // It's their turn! Wait for them to click Next
+          setIsWaitingForUser(true);
+          return; 
+        }
+
+        // Otherwise, the AI reads it
+        setIsWaitingForUser(false);
+        const utterance = new SpeechSynthesisUtterance(line.text);
+        
+        // Pick a decent voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.lang === "en-US");
+        if (preferredVoice) utterance.voice = preferredVoice;
+        
+        // Change pitch slightly based on character just for variety (optional fun feature)
+        utterance.pitch = (line.speaker === "Max" || line.speaker === "Maya") ? 1.2 : 1.0;
+        utterance.rate = 0.95; 
+
+        utterance.onend = () => {
+          setActiveLineIndex(prev => prev + 1);
+        };
+        
+        utterance.onerror = (e) => {
+          console.error("Speech Error:", e);
+          setActiveLineIndex(prev => prev + 1); // Skip on error
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+        return () => {
+          window.speechSynthesis.cancel();
+        };
+
+      }, [isPlaying, activeLineIndex, activeScene, selectedChar]);
+
+      // Initialize voices
+      useEffect(() => {
+        window.speechSynthesis.getVoices();
+      }, []);
+
+      const handleStartRehearsal = () => {
+        if (!selectedChar) {
+          alert("Please select a character first!");
+          return;
+        }
+        setIsPlaying(true);
+        setActiveLineIndex(0);
+      };
+
+      const handleStopRehearsal = () => {
+        setIsPlaying(false);
+        setIsWaitingForUser(false);
+        window.speechSynthesis.cancel();
+      };
+
+      const handleUserReadNext = () => {
+        setIsWaitingForUser(false);
+        setActiveLineIndex(prev => prev + 1);
+      };
+
+      const handleLineClick = (idx) => {
+        if (!isPlaying) return;
+        window.speechSynthesis.cancel();
+        setActiveLineIndex(idx);
+        setIsWaitingForUser(false);
+      };
+
+      const handleHearMyLine = () => {
+        window.speechSynthesis.cancel();
+        const line = activeScene.lines[activeLineIndex];
+        const utterance = new SpeechSynthesisUtterance(line.text);
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.lang === "en-US");
+        if (preferredVoice) utterance.voice = preferredVoice;
+        utterance.pitch = (line.speaker === "Max" || line.speaker === "Maya") ? 1.2 : 1.0;
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const handleSceneChange = (index) => {
+        handleStopRehearsal();
+        setActiveSceneIndex(index);
+        setActiveLineIndex(-1);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col items-center pb-20">
+          
+          {/* Header */}
+          <header className="w-full bg-green-600 text-white shadow-md p-4 sticky top-0 z-50">
+            <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <i className="fas fa-masks-theater"></i> Family, Forever
+                </h1>
+                <p className="text-green-200 text-sm">Virtual Rehearsal Assistant</p>
+              </div>
+              
+              <div className="flex items-center gap-3 bg-green-700 p-2 rounded-lg">
+                <label className="font-semibold text-sm">My Character:</label>
+                <select 
+                  className="text-black px-3 py-1 rounded shadow-sm outline-none"
+                  value={selectedChar}
+                  onChange={(e) => {
+                    setSelectedChar(e.target.value);
+                    handleStopRehearsal();
+                  }}
+                >
+                  <option value="">-- Choose Role --</option>
+                  {CHARACTERS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+          </header>
+
+          <main className="w-full max-w-4xl mx-auto mt-6 px-4">
+            
+            {/* Scene Selector Tabs */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 p-2 bg-white rounded-xl shadow">
+              {SCRIPT.map((scene, idx) => (
+                <button
+                  key={scene.id}
+                  onClick={() => handleSceneChange(idx)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeSceneIndex === idx 
+                    ? "bg-green-500 text-white shadow-sm" 
+                    : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  Scene {idx + 1}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Stage Area */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative">
+              
+              {/* Scene Info */}
+              <div className="bg-gray-50 border-b border-gray-200 p-6 text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{activeScene.title}</h2>
+                <p className="text-gray-600 italic text-sm">{activeScene.setting}</p>
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-center gap-4 p-4 border-b border-gray-100 bg-white sticky top-0 z-40 shadow-sm">
+                {!isPlaying ? (
+                  <button 
+                    onClick={handleStartRehearsal}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-bold shadow-md transition transform hover:scale-105 flex items-center gap-2"
+                  >
+                    <i className="fas fa-play"></i> Start Rehearsal
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={handleStopRehearsal}
+                      className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-md transition flex items-center gap-2"
+                    >
+                      <i className="fas fa-stop"></i> Stop Rehearsal
+                    </button>
+
+                    {isWaitingForUser && (
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={handleHearMyLine}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-md transition flex items-center gap-2 border-2 border-white"
+                        >
+                          <i className="fas fa-volume-up"></i> Hear Line
+                        </button>
+                        <button 
+                          onClick={handleUserReadNext}
+                          className="bg-green-500 hover:bg-green-600 animate-pulse text-white px-6 py-2 rounded-full font-bold shadow-lg transition flex items-center gap-2 border-2 border-white"
+                        >
+                          <i className="fas fa-check"></i> Next Line
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Script Lines */}
+              <div className="p-6 space-y-4 text-lg">
+                {activeScene.lines.map((line, idx) => {
+                  const isMyLine = selectedChar && (
+                    line.speaker === selectedChar || 
+                    (line.speaker === "All Kids" && selectedChar !== "Ms. Thompson" && selectedChar !== "Grandma" && selectedChar !== "The Mayor") ||
+                    (line.speaker && line.speaker.includes(selectedChar))
+                  );
+                  
+                  const isActive = isPlaying && activeLineIndex === idx;
+
+                  let lineStyle = "p-4 rounded-lg transition-colors border border-transparent ";
+                  
+                  if (isActive) {
+                    lineStyle += "active-line shadow-md scale-[1.01] ";
+                  } else if (isMyLine && !line.type) {
+                    lineStyle += "my-line ";
+                  } else {
+                    lineStyle += "bg-white ";
+                  }
+
+                  if (isPlaying) {
+                    lineStyle += "cursor-pointer hover:opacity-80 ";
+                  }
+
+                  if (line.type === 'stage') {
+                    return (
+                      <div key={idx} ref={el => scriptRefs.current[idx] = el} onClick={() => handleLineClick(idx)} className={`text-center my-4 ${isActive ? 'active-line' : ''} ${isPlaying ? 'cursor-pointer' : ''}`}>
+                        <span className="stage-direction">{line.text}</span>
+                      </div>
+                    );
+                  }
+
+                  if (line.type === 'song') {
+                    return (
+                      <div key={idx} ref={el => scriptRefs.current[idx] = el} onClick={() => handleLineClick(idx)} className={`my-2 p-3 rounded-lg flex gap-4 ${isActive ? 'active-line' : 'bg-indigo-50 border border-indigo-100'} ${isPlaying ? 'cursor-pointer' : ''}`}>
+                        <div className="font-bold text-indigo-700 w-24 shrink-0 text-right"><i className="fas fa-music text-xs mr-1"></i> {line.speaker}</div>
+                        <div className="song-lyric whitespace-pre-wrap">{line.text}</div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={idx} ref={el => scriptRefs.current[idx] = el} onClick={() => handleLineClick(idx)} className={`flex gap-4 ${lineStyle}`}>
+                      <div className="font-bold text-gray-700 w-24 shrink-0 text-right">
+                        {line.speaker}
+                      </div>
+                      <div className={`flex-1 ${isMyLine ? 'font-medium' : 'text-gray-800'}`}>
+                        {line.text}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* End of Scene / Audio Player for the Song */}
+              <div className="bg-indigo-50 p-6 border-t border-indigo-100 mt-8">
+                <h3 className="text-xl font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                  <i className="fas fa-microphone-alt"></i> Music Practice: {activeScene.songName}
+                </h3>
+                <p className="text-indigo-700 text-sm mb-4">Play the instrumental track below to practice your singing for this scene!</p>
+                
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-200">
+                  <audio controls className="w-full" src={encodeURI(activeScene.audioFile)}>
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              </div>
+
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
